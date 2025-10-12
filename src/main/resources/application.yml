@@ -1,0 +1,26 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://${DB_HOST_ENV}/systems_design_workshop
+    username: ${DB_USER_SECRET}
+    password: ${DB_PWD_SECRET}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+  jackson:
+    serialization:
+      WRITE_DATES_AS_TIMESTAMPS: false
+  output:
+    ansi:
+      enabled: ALWAYS
+security:
+  credentials:
+    private-key: ${PK_SECRET}
+
+server:
+  port: 9397

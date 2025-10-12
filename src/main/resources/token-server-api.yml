@@ -1,0 +1,139 @@
+openapi: 3.0.3
+info:
+  title: Token Server API
+  version: 1.0.0
+  description: |
+    API for issuing and validating JWT access tokens using RSA signature.
+    Follows OAuth2 Client Credentials Flow.
+servers:
+  - url: https://token-server/api/v1
+paths:
+  /token:
+    post:
+      summary: Generate JWT token
+      description: Issue a signed JWT access token for a registered client.
+      parameters:
+        - in: header
+          name: Authorization
+          required: true
+          schema:
+            type: string
+            maxLength: 5000
+          description: Bearer token signed by the client using its private key
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenRequest'
+      responses:
+        '200':
+          description: Token successfully generated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+        '400':
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized - invalid or missing Authorization header
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden - invalid client_id or body content
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /introspect:
+    post:
+      summary: Validate JWT token
+      description: Validates a JWT and returns its status and decoded claims.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenIntrospectionRequest'
+      responses:
+        '200':
+          description: Token introspection result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenIntrospectionResponse'
+        '400':
+          description: Invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    TokenRequest:
+      type: object
+      required: [client_id]
+      additionalProperties: false
+      properties:
+        client_id:
+          type: string
+          description: The registered client identifier
+          pattern: "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$"
+
+    TokenResponse:
+      type: object
+      properties:
+        access_token:
+          type: string
+        token_type:
+          type: string
+          example: Bearer
+        expires_in:
+          type: integer
+          example: 3600
+        scope:
+          type: string
+
+    TokenIntrospectionRequest:
+      type: object
+      required: [token]
+      additionalProperties: false
+      properties:
+        token:
+          type: string
+
+    TokenIntrospectionResponse:
+      type: object
+      properties:
+        active:
+          type: boolean
+        scope:
+          type: string
+        client_id:
+          type: string
+        exp:
+          type: integer
+
+    ErrorResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            notification:
+              type: string
+            severity:
+              type: string
+              enum: [ERROR, WARNING, INFO]
+            code:
+              type: string
+            message:
+              type: string

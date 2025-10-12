@@ -1,0 +1,117 @@
+plugins {
+	id 'java'
+	id 'org.springframework.boot' version '3.5.6'
+	id 'io.spring.dependency-management' version '1.1.7'
+	id "org.openapi.generator" version "7.6.0"
+}
+
+group = 'com.example'
+version = '1.0.0'
+description = 'Demo project for Spring Boot'
+
+java {
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(21)
+	}
+}
+repositories {
+	mavenCentral()
+}
+
+dependencies {
+	implementation 'org.springframework.boot:spring-boot-starter-web'
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	implementation 'jakarta.validation:jakarta.validation-api:3.1.0'
+	implementation 'io.swagger.core.v3:swagger-core:2.2.22'
+	implementation 'org.springframework.boot:spring-boot-starter-validation'
+
+
+	compileOnly 'org.projectlombok:lombok:1.18.30'
+	annotationProcessor 'org.projectlombok:lombok:1.18.30'
+
+	implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
+	runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.11.5'
+	runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.11.5' // Para parseo JSON
+
+	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+	runtimeOnly 'org.postgresql:postgresql:42.6.0'
+}
+
+tasks.withType(JavaCompile) {
+	options.encoding = 'UTF-8'
+}
+
+openApiGenerate {
+	generatorName = 'spring'
+	inputSpec = "$rootDir/src/main/resources/token-server-api.yml"
+	outputDir = "$buildDir/generated"
+	def basePackageStr = "com.example.contract"
+	apiPackage = basePackageStr + '.api'
+	modelPackage = basePackageStr + '.model'
+	configOptions = [
+			interfaceOnly          : 'true',
+			openApiNullable        : 'false',
+			useJakartaEe           : 'true',
+			omitGeneratedAnnotation: 'true',
+			java8                  : 'false',
+			sourceFolder           : 'src/main/java',
+			library                : 'spring-boot',
+			generateApiTests       : 'false',
+			generateModelTests     : 'false',
+			hideGenerationTimestamp: 'true',
+			skipDefaultInterface   : 'true'
+	]
+}
+
+/**
+ * Copia las clases generadas desde build hacia src/main/java
+ */
+//tasks.register('copyGeneratedSources', Copy) {
+//	dependsOn tasks.openApiGenerate
+//	from("$buildDir/generated/src/main/java")
+//	into("$projectDir/src/main/java")
+//}
+
+tasks.register('cleanGeneratedCode') {
+	dependsOn tasks.openApiGenerate
+	doLast {
+		def generatedDir = file("$buildDir/generated/src/main/java")
+		if (generatedDir.exists()) {
+			generatedDir.eachFileRecurse { file ->
+				if (file.name.endsWith('.java')) {
+					def text = file.text
+
+					// 1️⃣ Quitar anotaciones @Generated(...)
+					text = text.replaceAll(/@Generated\(.*\)\n?/, '')
+
+					// 2️⃣ Eliminar líneas de imports no usados (import ...;)
+					// Esta versión simple elimina importaciones que no se usan en el cuerpo de la clase
+					def matcher = text =~ /import\s+([\w\.]+);/
+					matcher.each { match ->
+						def imported = match[1]
+						if (!text.replace(match[0], '').contains(imported.split('\\.')[-1])) {
+							text = text.replace(match[0], '')
+						}
+					}
+
+					// Limpieza de saltos de línea extra
+					text = text.replaceAll(/(?m)^\s*\n/, '\n')
+
+					file.text = text
+				}
+			}
+		}
+	}
+}
+
+tasks.named('copyGeneratedSources') {
+	dependsOn tasks.cleanGeneratedCode
+}
+
+tasks.named('compileJava') {
+	dependsOn tasks.copyGeneratedSources
+}
+
+bootJar {
+	archiveFileName = 'openapi-library-example.jar'
+}
