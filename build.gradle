@@ -66,11 +66,11 @@ openApiGenerate {
 /**
  * Copia las clases generadas desde build hacia src/main/java
  */
-//tasks.register('copyGeneratedSources', Copy) {
-//	dependsOn tasks.openApiGenerate
-//	from("$buildDir/generated/src/main/java")
-//	into("$projectDir/src/main/java")
-//}
+tasks.register('copyGeneratedSources', Copy) {
+	dependsOn tasks.openApiGenerate
+	from("$buildDir/generated/src/main/java")
+	into("$projectDir/src/main/java")
+}
 
 tasks.register('cleanGeneratedCode') {
 	dependsOn tasks.openApiGenerate
@@ -104,13 +104,13 @@ tasks.register('cleanGeneratedCode') {
 	}
 }
 
-tasks.named('copyGeneratedSources') {
-	dependsOn tasks.cleanGeneratedCode
-}
+//tasks.named('copyGeneratedSources') {
+//	dependsOn tasks.cleanGeneratedCode
+//}
 
-tasks.named('compileJava') {
-	dependsOn tasks.copyGeneratedSources
-}
+//tasks.named('compileJava') {
+//	dependsOn tasks.copyGeneratedSources
+//}
 
 bootJar {
 	archiveFileName = 'openapi-library-example.jar'
