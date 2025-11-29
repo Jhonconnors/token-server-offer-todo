@@ -18,6 +18,7 @@ public class SecurityConfig {
                         // endpoints públicos
                         .requestMatchers("/auth/login").permitAll()
                         .requestMatchers("/certs").permitAll()
+                        .requestMatchers("/token").permitAll()
                         // cualquier otro endpoint requiere autenticación
                         .anyRequest().authenticated()
                 );
