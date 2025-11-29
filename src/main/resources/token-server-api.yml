@@ -1,16 +1,17 @@
 openapi: 3.0.3
 info:
   title: Token Server API
-  version: 1.0.0
+  version: 1.0.2
   description: |
     API for issuing and validating JWT access tokens using RSA signature.
-    Follows OAuth2 Client Credentials Flow.
+    Supports both header-based and body-based client assertions.
+    Follows OAuth2 Client Credentials Flow (RFC 7523), plus encrypted login.
 servers:
   - url: https://token-server/api/v1
 paths:
   /token:
     post:
-      summary: Generate JWT token
+      summary: Generate JWT token (header-based)
       description: Issue a signed JWT access token for a registered client.
       parameters:
         - in: header
@@ -45,32 +46,84 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-        '403':
-          description: Forbidden - invalid client_id or body content
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
 
-  /introspect:
+  /token-classic:
     post:
-      summary: Validate JWT token
-      description: Validates a JWT and returns its status and decoded claims.
+      summary: Generate JWT token (body-based client assertion)
+      description: |
+        Issues a new JWT access token using the client assertion flow.
+        The client sends its signed JWT in the request body, following RFC 7523.
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/TokenIntrospectionRequest'
+              $ref: '#/components/schemas/TokenAssertionRequest'
       responses:
         '200':
-          description: Token introspection result
+          description: Token successfully generated
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TokenIntrospectionResponse'
+                $ref: '#/components/schemas/TokenResponse'
         '400':
-          description: Invalid token
+          description: Invalid or expired client assertion
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized - invalid signature or claim
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /certs:
+    get:
+      summary: Retrieve the server public key
+      description: Returns the public RSA key of the Token Server in JWK format.
+      responses:
+        '200':
+          description: Public JWK Set
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JwkSet'
+        '500':
+          description: Error retrieving public keys
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/login:
+    post:
+      summary: Encrypted login
+      description: |
+        Receives the username and password encrypted with the server public RSA key.
+        Validates the credentials and returns a short-lived JWT (5 minutes).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Login successful, JWT issued
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '400':
+          description: Missing username or password
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized - invalid credentials or timestamp
           content:
             application/json:
               schema:
@@ -88,6 +141,18 @@ components:
           description: The registered client identifier
           pattern: "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$"
 
+    TokenAssertionRequest:
+      type: object
+      required: [client_id, client_assertion]
+      additionalProperties: false
+      properties:
+        client_id:
+          type: string
+          description: The registered client identifier
+        client_assertion:
+          type: string
+          description: JWT signed by the client (as per RFC 7523)
+
     TokenResponse:
       type: object
       properties:
@@ -102,25 +167,54 @@ components:
         scope:
           type: string
 
-    TokenIntrospectionRequest:
+    LoginRequest:
       type: object
-      required: [token]
+      required: [username,password]
       additionalProperties: false
       properties:
-        token:
+        username:
           type: string
+          description: Base64 + RSA-encrypted username + timestamp
+        password:
+          type: string
+          description: Base64 + RSA-encrypted password + timestamp
 
-    TokenIntrospectionResponse:
+    LoginResponse:
       type: object
       properties:
-        active:
-          type: boolean
-        scope:
+        accessToken:
           type: string
-        client_id:
+          description: JWT token valid for 5 minutes
+        tokenType:
           type: string
-        exp:
+          example: Bearer
+        expiresIn:
           type: integer
+          example: 300
+
+    JwkSet:
+      type: object
+      properties:
+        keys:
+          type: array
+          items:
+            type: object
+            properties:
+              kty:
+                type: string
+                example: RSA
+              kid:
+                type: string
+              use:
+                type: string
+                example: sig
+              alg:
+                type: string
+                example: RS512
+              n:
+                type: string
+              e:
+                type: string
 
     ErrorResponse:
       type: object

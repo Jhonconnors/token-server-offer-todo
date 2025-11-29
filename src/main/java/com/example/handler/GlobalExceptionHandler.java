@@ -1,6 +1,7 @@
 package com.example.handler;
 
 import com.example.contract.model.ErrorResponse;
+import com.example.exception.LoginFailedException;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -60,6 +61,15 @@ public class GlobalExceptionHandler {
                 HttpStatus.NOT_FOUND,
                 "Error Method Http",
                 "Method is not Supported"
+        );
+    }
+
+    @ExceptionHandler(LoginFailedException.class)
+    public ResponseEntity<ErrorResponse> loginFailed(LoginFailedException ex) {
+        return ErrorResponseBuilder.build(
+                HttpStatus.UNAUTHORIZED,
+                "Error With Credentials",
+                ex.getMessage()
         );
     }
 }

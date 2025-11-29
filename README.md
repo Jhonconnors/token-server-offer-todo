@@ -23,4 +23,22 @@ This server relies on **asymmetric cryptography (RSA)**:
 
 ---
 
-## Base URL
+---
+
+## 🔁 `/token-classic` – Body-based Client Assertion Flow (RFC 7523)
+
+This endpoint behaves like `/token` but receives the **client assertion** (a signed JWT) in the request body instead of the Authorization header.
+
+This follows the [OAuth2 JWT Bearer Token Flow (RFC 7523)](https://datatracker.ietf.org/doc/html/rfc7523), allowing clients to authenticate using a signed assertion directly in the body.
+
+### Example Request
+
+```http
+POST /token-g
+Content-Type: application/json
+
+{
+  "client_id": "123e4567-e89b-12d3-a456-426614174000",
+  "client_assertion": "eyJhbGciOiJSUzUxMiIsInR5cCI6IkpXVCJ9..."
+}
+

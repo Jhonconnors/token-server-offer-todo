@@ -1,43 +1,38 @@
-package com.example.auth.controller;
+package com.example.controller;
 
-import com.example.auth.KeyUtils;
-import com.example.auth.model.UserEntity;
-import com.example.auth.repository.UserRepository;
-import com.example.auth.service.JwtService;
-import com.example.auth.service.KeyService;
+
+import com.example.entity.UserEntity;
+import com.example.repository.UserRepository;
 import com.example.contract.model.LoginRequest;
 import com.example.contract.model.LoginResponse;
 import com.example.exception.LoginFailedException;
+import com.example.service.JwtGenerateService;
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.argon2.Argon2PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
-
 import java.nio.charset.StandardCharsets;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.util.Base64;
-import java.util.Map;
 import java.util.Optional;
 
 @RestController
 @RequestMapping("/auth")
 @Slf4j
-public class AuthController {
+public class LogginController {
 
-    private final KeyService keyService;
     private final UserRepository userRepository;
     private final Argon2PasswordEncoder passwordEncoder;
-    private final JwtService jwtService;
     private final DateTimeFormatter minuteFmt = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm");
+    private final JwtGenerateService jwtGenerateService;
 
-    public AuthController(KeyService keyService, UserRepository userRepository,
-                          Argon2PasswordEncoder passwordEncoder, JwtService jwtService) {
-        this.keyService = keyService;
+    public LogginController(UserRepository userRepository,
+                            Argon2PasswordEncoder passwordEncoder, JwtGenerateService jwtGenerateService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
-        this.jwtService = jwtService;
+        this.jwtGenerateService = jwtGenerateService;
     }
 
     @PostMapping("/login")
@@ -53,8 +48,8 @@ public class AuthController {
             byte[] passCipher = Base64.getDecoder().decode(body.getPassword());
 
             // 2) Decrypt RSA OAEP SHA-512
-            byte[] userPlainBytes = KeyUtils.rsaOaepDecrypt(keyService.getPrivateKey(), userCipher);
-            byte[] passPlainBytes = KeyUtils.rsaOaepDecrypt(keyService.getPrivateKey(), passCipher);
+            byte[] userPlainBytes = jwtGenerateService.rsaOaepDecrypt( userCipher);
+            byte[] passPlainBytes = jwtGenerateService.rsaOaepDecrypt(passCipher);
 
             String userInnerBase64 = new String(userPlainBytes, StandardCharsets.UTF_8);
             String passInnerBase64 = new String(passPlainBytes, StandardCharsets.UTF_8);
@@ -82,7 +77,7 @@ public class AuthController {
             long diffUser = Math.abs(Duration.between(sentUser, now).toMinutes());
             long diffPass = Math.abs(Duration.between(sentPass, now).toMinutes());
 
-            if (diffUser > 1 || diffPass > 1) {
+            if (diffUser > 2 || diffPass > 2) {
                 throw new LoginFailedException("Timestamp too old or skewed");
             }
 
@@ -97,7 +92,7 @@ public class AuthController {
             }
 
             // 7) Generate JWT
-            String jwt = jwtService.createToken(user.getUsername(), Map.of("sub", user.getUsername()));
+            String jwt = jwtGenerateService.generateSignedJwt(user.getUsername(), "WEB");
 
             // 8) Build LoginResponse
             LoginResponse response = new LoginResponse();

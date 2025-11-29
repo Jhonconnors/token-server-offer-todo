@@ -1,4 +1,4 @@
-package com.example.auth.model;
+package com.example.entity;
 
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -16,6 +16,6 @@ public class UserEntity {
     @Column(unique = true, nullable = false)
     private String username;
 
-    @Column(nullable = false)
-    private String passwordHash; // Argon2 hash
+    @Column(name = "password_hash", nullable = false)
+    private String passwordHash;
 }

@@ -6,7 +6,7 @@
 package com.example.contract.api;
 
 import com.example.contract.model.ErrorResponse;
-import com.example.contract.model.TokenRequest;
+import com.example.contract.model.TokenAssertionRequest;
 import com.example.contract.model.TokenResponse;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -17,7 +17,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
-import io.swagger.v3.oas.annotations.enums.ParameterIn;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -29,45 +28,43 @@ import jakarta.validation.constraints.*;
 import java.util.Map;
 
 @Validated
-@Tag(name = "token", description = "the token API")
-public interface TokenApi {
+@Tag(name = "token-classic", description = "the token-classic API")
+public interface TokenClassicApi {
 
     /**
-     * POST /token : Generate JWT token (header-based)
-     * Issue a signed JWT access token for a registered client.
+     * POST /token-classic : Generate JWT token (body-based client assertion)
+     * Issues a new JWT access token using the client assertion flow. The client sends its signed JWT in the request body, following RFC 7523. 
      *
-     * @param authorization Bearer token signed by the client using its private key (required)
-     * @param tokenRequest  (required)
+     * @param tokenAssertionRequest  (required)
      * @return Token successfully generated (status code 200)
-     *         or Invalid request body (status code 400)
-     *         or Unauthorized - invalid or missing Authorization header (status code 401)
+     *         or Invalid or expired client assertion (status code 400)
+     *         or Unauthorized - invalid signature or claim (status code 401)
      */
     @Operation(
-        operationId = "tokenPost",
-        summary = "Generate JWT token (header-based)",
-        description = "Issue a signed JWT access token for a registered client.",
+        operationId = "tokenClassicPost",
+        summary = "Generate JWT token (body-based client assertion)",
+        description = "Issues a new JWT access token using the client assertion flow. The client sends its signed JWT in the request body, following RFC 7523. ",
         responses = {
             @ApiResponse(responseCode = "200", description = "Token successfully generated", content = {
                 @Content(mediaType = "application/json", schema = @Schema(implementation = TokenResponse.class))
             }),
-            @ApiResponse(responseCode = "400", description = "Invalid request body", content = {
+            @ApiResponse(responseCode = "400", description = "Invalid or expired client assertion", content = {
                 @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))
             }),
-            @ApiResponse(responseCode = "401", description = "Unauthorized - invalid or missing Authorization header", content = {
+            @ApiResponse(responseCode = "401", description = "Unauthorized - invalid signature or claim", content = {
                 @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))
             })
         }
     )
     @RequestMapping(
         method = RequestMethod.POST,
-        value = "/token",
+        value = "/token-classic",
         produces = { "application/json" },
         consumes = { "application/json" }
     )
 
-    ResponseEntity<TokenResponse> tokenPost(
-        @NotNull @Size(max = 5000) @Parameter(name = "Authorization", description = "Bearer token signed by the client using its private key", required = true, in = ParameterIn.HEADER) @RequestHeader(value = "Authorization", required = true) String authorization,
-        @Parameter(name = "TokenRequest", description = "", required = true) @Valid @RequestBody TokenRequest tokenRequest
+    ResponseEntity<TokenResponse> tokenClassicPost(
+        @Parameter(name = "TokenAssertionRequest", description = "", required = true) @Valid @RequestBody TokenAssertionRequest tokenAssertionRequest
     );
 
 }

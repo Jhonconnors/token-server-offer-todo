@@ -29,17 +29,26 @@ dependencies {
 	compileOnly 'org.projectlombok:lombok:1.18.30'
 	annotationProcessor 'org.projectlombok:lombok:1.18.30'
 
+    implementation 'org.springframework.retry:spring-retry'
+    implementation 'org.springframework:spring-aspects'
+
+    // Spring Security crypto (Argon2PasswordEncoder)
+    implementation 'org.springframework.boot:spring-boot-starter-security'
 	implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
 	runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.11.5'
 	runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.11.5' // Para parseo JSON
+    implementation 'org.bouncycastle:bcprov-jdk18on:1.82'
 
-	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    // JPA + H2 (o tu DB)
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+//    runtimeOnly 'com.h2database:h2'
 	runtimeOnly 'org.postgresql:postgresql:42.6.0'
 }
 
 tasks.withType(JavaCompile) {
 	options.encoding = 'UTF-8'
 }
+/*
 
 openApiGenerate {
 	generatorName = 'spring'
@@ -63,9 +72,8 @@ openApiGenerate {
 	]
 }
 
-/**
- * Copia las clases generadas desde build hacia src/main/java
- */
+// Copia las clases generadas desde build hacia src/main/java
+
 tasks.register('copyGeneratedSources', Copy) {
 	dependsOn tasks.openApiGenerate
 	from("$buildDir/generated/src/main/java")
@@ -104,14 +112,15 @@ tasks.register('cleanGeneratedCode') {
 	}
 }
 
-//tasks.named('copyGeneratedSources') {
-//	dependsOn tasks.cleanGeneratedCode
-//}
+tasks.named('copyGeneratedSources') {
+	dependsOn tasks.cleanGeneratedCode
+}
 
-//tasks.named('compileJava') {
-//	dependsOn tasks.copyGeneratedSources
-//}
+tasks.named('compileJava') {
+	dependsOn tasks.copyGeneratedSources
+}
 
 bootJar {
 	archiveFileName = 'openapi-library-example.jar'
 }
+*/
