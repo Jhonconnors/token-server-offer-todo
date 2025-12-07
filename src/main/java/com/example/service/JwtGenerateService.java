@@ -24,7 +24,7 @@ public class JwtGenerateService {
         this.config = config;
     }
 
-    public String generateSignedJwt(String clientId, String scopes) throws Exception {
+    public String generateSignedJwt(String clientId, String scopes, Long expirationMinutes) throws Exception {
         // Convertir PEM a PrivateKey
         String privateKeyPem = config.getPrivateKey()
                 .replace("-----BEGIN PRIVATE KEY-----", "")
@@ -39,7 +39,7 @@ public class JwtGenerateService {
         return Jwts.builder()
                 .setSubject(clientId)
                 .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + 3 * 60 * 1000)) // 3 min
+                .setExpiration(new Date(System.currentTimeMillis() + expirationMinutes * 60 * 1000)) // 3 min
                 .claim("scope", scopes)
                 .claim("no_mirar", "wr9UZSBhdHJldmVzIGEgdXNhciBtaXMgaGVjaGl6b3MgZW4gbWkgY29udHJhLCBQb3R0ZXI/Cg==")
                 .signWith(privateKey, SignatureAlgorithm.RS512)

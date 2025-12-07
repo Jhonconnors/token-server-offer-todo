@@ -17,6 +17,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // endpoints públicos
                         .requestMatchers("/auth/login").permitAll()
+                        .requestMatchers("/auth/web/token").permitAll()
                         .requestMatchers("/certs").permitAll()
                         .requestMatchers("/token").permitAll()
                         // cualquier otro endpoint requiere autenticación

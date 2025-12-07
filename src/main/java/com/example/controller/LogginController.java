@@ -92,7 +92,7 @@ public class LogginController {
             }
 
             // 7) Generate JWT
-            String jwt = jwtGenerateService.generateSignedJwt(user.getUsername(), "WEB");
+            String jwt = jwtGenerateService.generateSignedJwt(user.getUsername(), "WEB", 3L);
 
             // 8) Build LoginResponse
             LoginResponse response = new LoginResponse();

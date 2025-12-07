@@ -51,7 +51,7 @@ public class GenerateTokenController implements TokenApi {
 
             // 4️⃣ Generar token del servidor (ejemplo simple, puedes usar tu servicio JWT del servidor)
             TokenResponse response = new TokenResponse();
-            response.setAccessToken(generateService.generateSignedJwt(tokenRequest.getClientId(), scopes));
+            response.setAccessToken(generateService.generateSignedJwt(tokenRequest.getClientId(), scopes, 3L));
             response.setTokenType("Bearer");
             response.setExpiresIn(300);
             response.scope(scopes);

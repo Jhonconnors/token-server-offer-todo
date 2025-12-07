@@ -51,4 +51,15 @@ public class ClientTokenValidationService {
 
         return String.join(" ", client.getScopes());
     }
+
+    public String validateClientIdOnly(UUID clientId) {
+
+        OauthClient client = context.getOauthClientMap().get(clientId.toString());
+        if (client == null) {
+            throw new IllegalArgumentException("Client not found");
+        }
+
+        // Retornar scopes asociados
+        return String.join(" ", client.getScopes());
+    }
 }
